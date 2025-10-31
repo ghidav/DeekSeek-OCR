@@ -22,8 +22,9 @@ import requests
 import runpod
 
 # Resolve important paths inside the container.
-ROOT_DIR = Path(__file__).resolve().parent
-SCRIPT_PATH = ROOT_DIR / "custom_run_dpsk_ocr_pdf.py"
+SRC_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = SRC_DIR.parents[1]  # `/app` inside the container
+SCRIPT_PATH = PROJECT_ROOT / "custom_run_dpsk_ocr_pdf.py"
 
 # Default output directory (overridable via job input).
 DEFAULT_OUTPUT_DIR = Path(os.environ.get("RUNPOD_OUTPUT_DIR", "/tmp/runpod-output"))
@@ -103,7 +104,7 @@ def _run_pipeline(command: list[str]) -> subprocess.CompletedProcess[str]:
     """Execute the OCR pipeline and capture output for logging."""
     return subprocess.run(
         command,
-        cwd=str(ROOT_DIR),
+        cwd=str(PROJECT_ROOT),
         text=True,
         capture_output=True,
         check=False,

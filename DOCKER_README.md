@@ -76,6 +76,24 @@ curl http://localhost:8000/health
 }
 ```
 
+## RunPod Serverless Packaging
+
+To package this project for RunPod Serverless Workers (see [RunPod docs](https://docs.runpod.io/serverless/workers/deploy)), use the `runpod_worker/` bundle that mirrors the documented layout (`Dockerfile`, `src/handler.py`, `builder/requirements.txt`).
+
+```bash
+# Build the RunPod-ready image (from the repository root)
+docker build -f runpod_worker/Dockerfile -t ghcr.io/<your-org>/deepseek-ocr-runpod:latest .
+
+# (Optional) Authenticate and push to your container registry
+docker push ghcr.io/<your-org>/deepseek-ocr-runpod:latest
+```
+
+Key details:
+- The image clones the upstream DeepSeek-OCR sources and applies this repo's custom patches.
+- `src/handler.py` registers with `runpod.serverless.start`, so no additional entrypoint configuration is required.
+- Outputs default to `/runpod/out` (`RUNPOD_OUTPUT_DIR` env var) to align with RunPod volume mounts.
+- Mount or pre-bake model weights at `/app/models/deepseek-ai/DeepSeek-OCR` (e.g., via RunPod Network Storage) before invoking the worker.
+
 ## API Usage
 
 ### Endpoints
