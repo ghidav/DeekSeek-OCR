@@ -1,34 +1,46 @@
-# DeepSeek-OCR vLLM Docker Image
-# Based on official vLLM OpenAI image for better compatibility
+#
+# RunPod Serverless Worker Dockerfile for DeepSeek-OCR
+#
+# This image packages the DeepSeek-OCR vLLM pipeline together with the
+# RunPod serverless handler defined in src/handler.py. It follows the
+# requirements outlined in https://docs.runpod.io/serverless/workers/deploy.
+#
 
 FROM vllm/vllm-openai:v0.8.5
 
-# Switch to root user to install packages
+# Switch to root to install build dependencies and Python packages.
 USER root
-
-# Set working directory
 WORKDIR /app
 
-# Copy the DeepSeek-OCR vLLM implementation
-COPY DeepSeek-OCR/DeepSeek-OCR-master/DeepSeek-OCR-vllm/ ./DeepSeek-OCR-vllm/
+# Install minimal OS packages required for cloning upstream sources.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy custom files to replace the originals (transparent replacement approach)
+# Fetch the upstream DeepSeek-OCR implementation that we patch with our customizations.
+RUN git clone --depth=1 https://github.com/deepseek-ai/DeepSeek-OCR.git /tmp/deepseek-ocr \
+    && mv /tmp/deepseek-ocr/DeepSeek-OCR-vllm /app/DeepSeek-OCR-vllm \
+    && rm -rf /tmp/deepseek-ocr
+
+# Copy custom overrides that adjust model configuration and pipeline behaviour.
 COPY custom_config.py ./DeepSeek-OCR-vllm/config.py
 COPY custom_image_process.py ./DeepSeek-OCR-vllm/process/image_process.py
 COPY custom_deepseek_ocr.py ./DeepSeek-OCR-vllm/deepseek_ocr.py
 
-# Copy custom run scripts to replace the originals
-COPY custom_run_dpsk_ocr_pdf.py ./DeepSeek-OCR-vllm/run_dpsk_ocr_pdf.py
-COPY custom_run_dpsk_ocr_image.py ./DeepSeek-OCR-vllm/run_dpsk_ocr_image.py
-COPY custom_run_dpsk_ocr_eval_batch.py ./DeepSeek-OCR-vllm/run_dpsk_ocr_eval_batch.py
+# Copy the tailored run scripts that the handler invokes.
+COPY custom_run_dpsk_ocr_pdf.py ./custom_run_dpsk_ocr_pdf.py
+COPY custom_run_dpsk_ocr_image.py ./custom_run_dpsk_ocr_image.py
+COPY custom_run_dpsk_ocr_eval_batch.py ./custom_run_dpsk_ocr_eval_batch.py
+COPY custom_prompt.yaml ./custom_prompt.yaml
 
-# Copy the startup script
-COPY start_server.py .
+# Include the RunPod serverless handler entry point and its dependency manifest.
+COPY runpod_worker/src/ ./src/
+COPY runpod_worker/builder/requirements.txt /tmp/handler-requirements.txt
 
-# Copy requirements file and install additional dependencies
-COPY DeepSeek-OCR/requirements.txt .
+# Install Python dependencies required for the handler.
+RUN pip install --no-cache-dir -r /tmp/handler-requirements.txt
 
-# Install Python dependencies excluding conflicting packages
+# Install Python dependencies required for the OCR pipeline.
 RUN pip install --no-cache-dir \
     PyMuPDF \
     img2pdf \
@@ -36,33 +48,25 @@ RUN pip install --no-cache-dir \
     easydict \
     addict \
     Pillow \
-    numpy
+    numpy \
+    tqdm
 
-# Install additional dependencies for the API server
+# Additional dependencies for DeepSeek-OCR/vLLM runtime.
 RUN pip install --no-cache-dir \
     fastapi==0.104.1 \
     uvicorn[standard]==0.24.0 \
     python-multipart==0.0.6
 
-# Install flash-attn for optimal performance (if not already included)
-RUN pip install --no-cache-dir flash-attn==2.7.3 --no-build-isolation || echo "flash-attn may already be installed"
+# Install flash-attn and compatible tokenizers if not already provided by the base image.
+RUN pip install --no-cache-dir flash-attn==2.7.3 --no-build-isolation || echo "flash-attn already available"
+RUN pip install --no-cache-dir tokenizers==0.13.3 || echo "Using pre-installed tokenizers version"
 
-# Downgrade tokenizers to compatible version if needed
-RUN pip install --no-cache-dir tokenizers==0.13.3 || echo "Using existing tokenizers version"
-
-# Add the DeepSeek-OCR directory to PYTHONPATH
+# Ensure our DeepSeek-OCR sources are discoverable.
 ENV PYTHONPATH="/app/DeepSeek-OCR-vllm:${PYTHONPATH}"
 
-# Create directories for outputs
-RUN mkdir -p /app/outputs
+# Prepare directories expected by the handler.
+RUN mkdir -p /runpod/out /app/outputs
+ENV RUNPOD_OUTPUT_DIR="/runpod/out"
 
-# Make the scripts executable
-RUN chmod +x /app/start_server.py
-
-# Expose the API port
-EXPOSE 8000
-
-# Set the default command to use our custom server
-# Override the entrypoint to run our script directly
-# Use the full path to python to avoid PATH issues
-ENTRYPOINT ["/usr/bin/python3", "/app/start_server.py"]
+# RunPod executes the container command directly; match documentation by running the handler in unbuffered mode.
+ENTRYPOINT ["python", "-u", "/app/src/handler.py"]
