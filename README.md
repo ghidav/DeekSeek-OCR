@@ -1,5 +1,7 @@
 # RunPod DeepSeek-OCR Worker
 
+[![Runpod](https://api.runpod.io/badge/ghidav/DeekSeek-OCR)](https://console.runpod.io/hub/ghidav/DeekSeek-OCR)
+
 Serverless PDF-to-Markdown worker for [RunPod](https://www.runpod.io/) built on top of DeepSeek-OCR (via vLLM). The container mirrors the official RunPod layout—`Dockerfile`, `handler.py`, `requirements.txt`, and a `worker/` directory with DeepSeek overrides.
 
 ## Input Schema
