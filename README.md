@@ -1,5 +1,7 @@
 # DeepSeek-OCR: PDF to Markdown Converter
 
+[![Runpod](https://api.runpod.io/badge/ghidav/DeekSeek-OCR)](https://console.runpod.io/hub/ghidav/DeekSeek-OCR)
+
 A powerful OCR solution that converts PDF documents to Markdown format using DeepSeek-OCR with FastAPI backend. This project provides both a batch processing script and a REST API for flexible document conversion.
 
 ## 🚀 Quick Start
