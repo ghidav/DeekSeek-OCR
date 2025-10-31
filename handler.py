@@ -22,9 +22,10 @@ import requests
 import runpod
 
 # Resolve important paths inside the container.
-SRC_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = SRC_DIR.parents[1]  # `/app` inside the container
-SCRIPT_PATH = PROJECT_ROOT / "custom_run_dpsk_ocr_pdf.py"
+ROOT_DIR = Path(__file__).resolve().parent
+WORKER_DIR = ROOT_DIR / "worker"
+PIPELINES_DIR = WORKER_DIR / "pipelines"
+SCRIPT_PATH = PIPELINES_DIR / "custom_run_dpsk_ocr_pdf.py"
 
 # Default output directory (overridable via job input).
 DEFAULT_OUTPUT_DIR = Path(os.environ.get("RUNPOD_OUTPUT_DIR", "/tmp/runpod-output"))
@@ -87,6 +88,8 @@ def _ensure_pdf_input(job_input: Dict[str, Any]) -> tuple[Path, list[Path]]:
 
 def _build_command(pdf_path: Path, output_dir: Path, prompt: Optional[str]) -> list[str]:
     """Construct the command used to execute the DeepSeek OCR pipeline."""
+    if not SCRIPT_PATH.exists():
+        raise HandlerError(f"Pipeline script not found at {SCRIPT_PATH}")
     command = [
         "python",
         str(SCRIPT_PATH),
@@ -104,7 +107,7 @@ def _run_pipeline(command: list[str]) -> subprocess.CompletedProcess[str]:
     """Execute the OCR pipeline and capture output for logging."""
     return subprocess.run(
         command,
-        cwd=str(PROJECT_ROOT),
+        cwd=str(ROOT_DIR),
         text=True,
         capture_output=True,
         check=False,

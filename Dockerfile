@@ -2,7 +2,7 @@
 # RunPod Serverless Worker Dockerfile for DeepSeek-OCR
 #
 # This image packages the DeepSeek-OCR vLLM pipeline together with the
-# RunPod serverless handler defined in src/handler.py. It follows the
+# RunPod serverless handler defined in handler.py. It follows the
 # requirements outlined in https://docs.runpod.io/serverless/workers/deploy.
 #
 
@@ -23,19 +23,14 @@ RUN git clone --depth=1 https://github.com/deepseek-ai/DeepSeek-OCR.git /tmp/dee
     && rm -rf /tmp/deepseek-ocr
 
 # Copy custom overrides that adjust model configuration and pipeline behaviour.
-COPY custom_config.py ./DeepSeek-OCR-vllm/config.py
-COPY custom_image_process.py ./DeepSeek-OCR-vllm/process/image_process.py
-COPY custom_deepseek_ocr.py ./DeepSeek-OCR-vllm/deepseek_ocr.py
+COPY worker/overrides/custom_config.py ./DeepSeek-OCR-vllm/config.py
+COPY worker/overrides/custom_image_process.py ./DeepSeek-OCR-vllm/process/image_process.py
+COPY worker/overrides/custom_deepseek_ocr.py ./DeepSeek-OCR-vllm/deepseek_ocr.py
 
-# Copy the tailored run scripts that the handler invokes.
-COPY custom_run_dpsk_ocr_pdf.py ./custom_run_dpsk_ocr_pdf.py
-COPY custom_run_dpsk_ocr_image.py ./custom_run_dpsk_ocr_image.py
-COPY custom_run_dpsk_ocr_eval_batch.py ./custom_run_dpsk_ocr_eval_batch.py
-COPY custom_prompt.yaml ./custom_prompt.yaml
-
-# Include the RunPod serverless handler entry point and its dependency manifest.
-COPY runpod_worker/src/ ./src/
-COPY runpod_worker/builder/requirements.txt /tmp/handler-requirements.txt
+# Copy the RunPod serverless source bundle and dependency manifest.
+COPY worker/ ./worker/
+COPY handler.py ./handler.py
+COPY requirements.txt /tmp/handler-requirements.txt
 
 # Install Python dependencies required for the handler.
 RUN pip install --no-cache-dir -r /tmp/handler-requirements.txt
@@ -69,4 +64,4 @@ RUN mkdir -p /runpod/out /app/outputs
 ENV RUNPOD_OUTPUT_DIR="/runpod/out"
 
 # RunPod executes the container command directly; match documentation by running the handler in unbuffered mode.
-ENTRYPOINT ["python", "-u", "/app/src/handler.py"]
+ENTRYPOINT ["python", "-u", "/app/handler.py"]
