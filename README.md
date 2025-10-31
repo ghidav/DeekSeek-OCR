@@ -2,7 +2,7 @@
 
 [![Runpod](https://api.runpod.io/badge/ghidav/DeekSeek-OCR)](https://console.runpod.io/hub/ghidav/DeekSeek-OCR)
 
-Serverless PDF-to-Markdown worker for [RunPod](https://www.runpod.io/) built on top of DeepSeek-OCR (via vLLM). The container mirrors the official RunPod layout—`Dockerfile`, `handler.py`, `requirements.txt`, and a `worker/` directory with DeepSeek overrides.
+Serverless PDF-to-Markdown worker for [RunPod](https://www.runpod.io/) built on top of DeepSeek-OCR (via vLLM). The container mirrors the official RunPod layout—`Dockerfile`, `handler.py`, `requirements.txt`, and a `worker/` directory with DeepSeek overrides. The upstream `DeepSeek-OCR-vllm` sources are vendored under `worker/base/` so the build never depends on external Git clones.
 
 ## Input Schema
 
@@ -71,6 +71,8 @@ Attach the image to a RunPod Serverless Worker or Hub repo following the [RunPod
     │   ├── custom_config.py
     │   ├── custom_deepseek_ocr.py
     │   └── custom_image_process.py
+    ├── base/             # Vendored upstream DeepSeek-OCR sources
+    │   └── DeepSeek-OCR-vllm/
     └── pipelines/        # CLI entry points invoked by the handler
         ├── custom_run_dpsk_ocr_pdf.py
         ├── custom_run_dpsk_ocr_image.py
@@ -78,3 +80,5 @@ Attach the image to a RunPod Serverless Worker or Hub repo following the [RunPod
 ```
 
 All DeepSeek patches stay under `worker/`, keeping the root clean and aligned with the reference RunPod worker template.
+
+The upstream DeepSeek-OCR code is redistributed under its original MIT license (see `worker/base/LICENSE`).

@@ -8,19 +8,12 @@
 
 FROM vllm/vllm-openai:v0.8.5
 
-# Switch to root to install build dependencies and Python packages.
+# Switch to root to install Python packages.
 USER root
 WORKDIR /app
 
-# Install minimal OS packages required for cloning upstream sources.
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends git \
-    && rm -rf /var/lib/apt/lists/*
-
-# Fetch the upstream DeepSeek-OCR implementation that we patch with our customizations.
-RUN git clone --depth=1 https://github.com/deepseek-ai/DeepSeek-OCR.git /tmp/deepseek-ocr \
-    && mv /tmp/deepseek-ocr/DeepSeek-OCR-vllm /app/DeepSeek-OCR-vllm \
-    && rm -rf /tmp/deepseek-ocr
+# Copy the upstream DeepSeek-OCR vLLM implementation vendored in this repository.
+COPY worker/base/DeepSeek-OCR-vllm ./DeepSeek-OCR-vllm
 
 # Copy custom overrides that adjust model configuration and pipeline behaviour.
 COPY worker/overrides/custom_config.py ./DeepSeek-OCR-vllm/config.py
