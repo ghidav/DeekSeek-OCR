@@ -1,0 +1,33 @@
+{
+  "tests": [
+    {
+      "name": "validation_pdf_url",
+      "input": {
+        "pdf_url": "https://example.com/sample.pdf",
+        "prompt": "<image>\n<|grounding|>Convert to markdown.",
+        "output_dir": "/runpod/out"
+      },
+      "timeout": 20000
+    }
+  ],
+  "config": {
+    "gpuTypeId": "NVIDIA GeForce RTX 4090",
+    "gpuCount": 1,
+    "env": [
+      {
+        "key": "MODEL_PATH",
+        "value": "/app/models/deepseek-ai/DeepSeek-OCR"
+      }
+    ],
+    "allowedCudaVersions": [
+      "12.7",
+      "12.6",
+      "12.5",
+      "12.4",
+      "12.3",
+      "12.2",
+      "12.1",
+      "12.0"
+    ]
+  }
+}
