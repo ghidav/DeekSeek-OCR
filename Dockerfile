@@ -20,8 +20,9 @@ COPY worker/overrides/custom_config.py ./DeepSeek-OCR-vllm/config.py
 COPY worker/overrides/custom_image_process.py ./DeepSeek-OCR-vllm/process/image_process.py
 COPY worker/overrides/custom_deepseek_ocr.py ./DeepSeek-OCR-vllm/deepseek_ocr.py
 
-# Copy the RunPod serverless source bundle and dependency manifest.
-COPY worker/ ./worker/
+# Copy the RunPod overrides and pipelines plus the handler entry point.
+COPY worker/overrides/ ./worker/overrides/
+COPY worker/pipelines/ ./worker/pipelines/
 COPY handler.py ./handler.py
 COPY requirements.txt /tmp/handler-requirements.txt
 
@@ -50,7 +51,7 @@ RUN pip install --no-cache-dir flash-attn==2.7.3 --no-build-isolation || echo "f
 RUN pip install --no-cache-dir tokenizers==0.13.3 || echo "Using pre-installed tokenizers version"
 
 # Ensure our DeepSeek-OCR sources are discoverable.
-ENV PYTHONPATH="/app/DeepSeek-OCR-vllm:${PYTHONPATH}"
+ENV PYTHONPATH=/app/DeepSeek-OCR-vllm
 
 # Prepare directories expected by the handler.
 RUN mkdir -p /runpod/out /app/outputs
